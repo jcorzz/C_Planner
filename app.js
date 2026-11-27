@@ -436,8 +436,8 @@ function renderMetrics() {
     ["✓", completed, "Atividades concluídas", ""],
   ];
   elements.metrics.innerHTML = items.map(([icon, value, label, tone]) => `<div class="metric"><div class="metric-mark ${tone}">${icon}</div><div><div class="metric-value">${value}</div><div class="metric-label">${label}</div></div></div>`).join("");
-  const dueTomorrow = active.filter((task) => dateDistance(task.end) === 1).length;
-  document.querySelector("#notification-count").textContent = String(dueTomorrow);
+  const dueSoon = active.filter((task) => task.end && dateDistance(task.end) >= 0 && dateDistance(task.end) <= 1).length;
+  document.querySelector("#notification-count").textContent = String(dueSoon);
 }
 
 function updateFilterOptions() {
@@ -627,7 +627,7 @@ function renderSecondary(view) {
   if (view === "projects") {
     const filteredProjects = projects.filter((project) => projectListFilter === "Todos" || project.status === projectListFilter);
     const sortedProjects = [...filteredProjects].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-    target.innerHTML = `<div class="secondary-heading"><div class="secondary-heading-actions"><select class="project-status-filter" id="project-list-filter" aria-label="Filtrar situação dos projetos"><option ${projectListFilter === "Ativo" ? "selected" : ""}>Ativo</option><option ${projectListFilter === "Encerrado" ? "selected" : ""}>Encerrado</option><option ${projectListFilter === "Todos" ? "selected" : ""}>Todos</option></select><button class="button button-primary" id="new-project-button"><span class="button-symbol">＋</span> Novo projeto</button></div></div><div class="secondary-list">${sortedProjects.length ? sortedProjects.map((project) => { const projectTasks = tasks.filter((task) => task.project === project.name || (task.projectLinks || []).includes(project.id)); const deliverableCount = deliverables.filter((deliverable) => deliverable.projectId === project.id).length; return `<div class="secondary-row"><div><strong>${escapeHtml(project.name)}</strong><small>${projectTasks.length} atividades · ${deliverableCount} entregáveis${project.requester ? ` · Solicitante: ${escapeHtml(project.requester)}` : ""}${project.description ? ` · ${escapeHtml(project.description)}` : ""}</small></div><div class="secondary-row-actions"><button class="button button-secondary action-button" data-open-flow="${escapeHtml(project.id)}">Fluxograma</button><span class="status-pill ${project.status === "Encerrado" ? "status-cancelled" : "status-in-progress"}">${escapeHtml(project.status)}</span><button class="button button-secondary action-button" data-export-project="${escapeHtml(project.id)}">PDF</button><button class="button button-secondary action-button" data-edit-project="${escapeHtml(project.id)}">Editar</button><button class="button button-secondary action-button delete-project-button" data-delete-project="${escapeHtml(project.id)}">Excluir</button></div></div>`; }).join("") : `<div class="secondary-empty">Nenhum projeto ${projectListFilter === "Todos" ? "cadastrado" : projectListFilter.toLocaleLowerCase("pt-BR")}.</div>`}</div>`;
+    target.innerHTML = `<div class="secondary-heading"><div class="secondary-heading-actions"><select class="project-status-filter" id="project-list-filter" aria-label="Filtrar situação dos projetos"><option ${projectListFilter === "Ativo" ? "selected" : ""}>Ativo</option><option ${projectListFilter === "Encerrado" ? "selected" : ""}>Encerrado</option><option ${projectListFilter === "Todos" ? "selected" : ""}>Todos</option></select><button class="button button-primary" id="new-project-button"><span class="button-symbol">＋</span> Novo projeto</button></div></div><div class="secondary-list">${sortedProjects.length ? sortedProjects.map((project) => { const projectTasks = tasks.filter((task) => task.project === project.name || (task.projectLinks || []).includes(project.id)); const deliverableCount = deliverables.filter((deliverable) => deliverable.projectId === project.id).length; return `<div class="secondary-row project-row" data-edit-project="${escapeHtml(project.id)}" tabindex="0"><div><strong>${escapeHtml(project.name)}</strong><span class="status-pill ${project.status === "Encerrado" ? "status-cancelled" : "status-in-progress"}">${escapeHtml(project.status)}</span><small>${projectTasks.length} atividades · ${deliverableCount} entregáveis${project.requester ? ` · Solicitante: ${escapeHtml(project.requester)}` : ""}</small></div><div class="secondary-row-actions"><button class="button button-secondary action-button" data-export-project="${escapeHtml(project.id)}">Exportar PDF</button><details class="phase-menu"><summary aria-label="Mais ações" title="Mais ações">⋯</summary><div class="phase-menu-list"><button type="button" data-open-flow="${escapeHtml(project.id)}">Fluxograma</button><button type="button" data-edit-project="${escapeHtml(project.id)}">Editar</button><button type="button" class="danger delete-project-button" data-delete-project="${escapeHtml(project.id)}">Excluir</button></div></details></div></div>`; }).join("") : `<div class="secondary-empty">Nenhum projeto ${projectListFilter === "Todos" ? "cadastrado" : projectListFilter.toLocaleLowerCase("pt-BR")}.</div>`}</div>`;
     target.querySelector("#project-list-filter").addEventListener("change", (event) => {
       projectListFilter = event.target.value;
       renderSecondary("projects");
@@ -637,7 +637,24 @@ function renderSecondary(view) {
       selectedFlowProjectId = button.dataset.openFlow;
       setView("flowchart");
     }));
-    target.querySelectorAll("[data-edit-project]").forEach((button) => button.addEventListener("click", () => openProjectDialog(button.dataset.editProject)));
+    target.querySelectorAll("[data-edit-project]").forEach((element) => {
+      element.addEventListener("click", (event) => {
+        if (element.classList.contains("project-row") && event.target.closest(".secondary-row-actions")) return;
+        openProjectDialog(element.dataset.editProject);
+      });
+      if (element.classList.contains("project-row")) element.addEventListener("keydown", (event) => { if (event.key === "Enter" && event.target === element) openProjectDialog(element.dataset.editProject); });
+    });
+    target.querySelectorAll(".phase-menu").forEach((menu) => {
+      menu.addEventListener("toggle", () => {
+        if (!menu.open) return;
+        target.querySelectorAll(".phase-menu[open]").forEach((other) => { if (other !== menu) other.removeAttribute("open"); });
+        const rect = menu.querySelector("summary").getBoundingClientRect();
+        const list = menu.querySelector(".phase-menu-list");
+        list.style.top = `${rect.bottom + 2}px`;
+        list.style.left = `${Math.max(8, rect.right - list.offsetWidth)}px`;
+      });
+      menu.addEventListener("click", (event) => { if (event.target.closest(".phase-menu-list")) setTimeout(() => menu.removeAttribute("open"), 0); });
+    });
     target.querySelectorAll("[data-export-project]").forEach((button) => button.addEventListener("click", () => exportProjectPdf(button.dataset.exportProject)));
     target.querySelectorAll("[data-delete-project]").forEach((button) => button.addEventListener("click", () => deleteProject(button.dataset.deleteProject)));
   } else if (view === "people") {

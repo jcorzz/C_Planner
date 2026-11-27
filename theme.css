@@ -191,6 +191,8 @@
 .phase-menu-list{position:fixed;z-index:50;min-width:110px;display:flex;flex-direction:column;padding:4px;border:1px solid #e3e7e2;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.12)}
 .phase-menu-list button{border:0;background:none;text-align:left;padding:6px 10px;font-size:12px;border-radius:5px;cursor:pointer}
 .phase-menu-list button:hover{background:#f1f5f2}.phase-menu-list .danger{color:#b3382c}
+.project-row{cursor:pointer}.project-row .action-button{white-space:nowrap}.project-row:hover{background:#fafcfa}
+.project-row > div:first-child{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}.project-row small{flex-basis:100%}
 .project-phase-row.is-frozen{background:#eef4fa}
 .project-phase-row.is-completed,.project-planning-editor tr.is-completed{background:#f1f8f2}
 

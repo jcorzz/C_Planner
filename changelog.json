@@ -1,5 +1,14 @@
 [
 	{
+		"version": "0.1.7",
+		"date": "2026-11-27",
+		"changes": [
+			"Corrigido o contador de notificações, que não incluía atividades com prazo para hoje.",
+			"A lista de Projetos foi reorganizada: status ao lado do nome, botão Exportar PDF em destaque e menu ⋯ com Fluxograma, Editar e Excluir. Clicar na linha abre a edição do projeto.",
+			"A descrição do projeto não aparece mais no resumo da lista de Projetos."
+		]
+	},
+	{
 		"version": "0.1.6",
 		"date": "2026-11-27",
 		"changes": [
