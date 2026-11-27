@@ -51,6 +51,9 @@ function configureAutoUpdater() {
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.on("checking-for-update", () => sendUpdateStatus("Verificando atualizações…"));
+  autoUpdater.on("update-available", ({ version }) => sendUpdateStatus(`Nova versão ${version} encontrada. Baixando…`));
+  autoUpdater.on("update-not-available", () => sendUpdateStatus(`C_Planner ${app.getVersion()} está atualizado.`));
   autoUpdater.on("error", (error) => {
     console.error("Falha na atualização do C_Planner:", error);
     sendUpdateStatus("Não foi possível verificar ou baixar atualizações. O C_Planner continuará funcionando normalmente.");

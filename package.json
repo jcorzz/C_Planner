@@ -51,6 +51,9 @@
       "icon": "assets/c-planner.ico"
     },
     "nsis": {
+      "shortcutName": "C_Planner",
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
       "installerIcon": "assets/c-planner.ico",
       "uninstallerIcon": "assets/c-planner.ico"
     }
