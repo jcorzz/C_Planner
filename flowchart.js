@@ -214,7 +214,7 @@ export function createFlowchart(container, callbacks) {
   function addGraphNode(node, position) {
     if (node.type === "phase") {
       const phaseDone = Boolean(node.record.completedAt);
-      const phaseLabel = node.record.name.toLocaleUpperCase("pt-BR") + (phaseDone ? ` · ✓ CONCLUÍDA EM ${node.record.completedAt.split("-").reverse().join("/")}` : "");
+      const phaseLabel = node.record.name.toLocaleUpperCase("pt-BR") + (phaseDone ? ` · ✓ CONCLUÍDA EM ${node.record.completedAt.split("-").reverse().join("/")}` : node.record.status ? ` · ${node.record.status.toLocaleUpperCase("pt-BR")}` : "");
       graph.addNode({
         id: node.id,
         shape: "rect",

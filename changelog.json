@@ -1,5 +1,17 @@
 [
 	{
+		"version": "0.1.6",
+		"date": "2026-11-27",
+		"changes": [
+			"Cada fase agora tem status (Não iniciada, Em andamento, Concluída ou Congelada), exibido no cadastro, no fluxograma e no PDF. Fases congeladas ou concluídas não aceitam novas atividades.",
+			"O cadastro de fases ficou mais limpo: status em pílula colorida, menu ⋯ para renomear/remover, reordenação por arraste e resumo de entregáveis e atividades abertas.",
+			"O PDF do projeto ganhou cabeçalho e rodapé com a identidade do C_Planner.",
+			"Novo botão Buscar atualizações em Configurações.",
+			"Telas sem título e descrição redundantes; o cabeçalho com a navegação é a única indicação da página.",
+			"O Fluxograma sem projeto selecionado mostra a lista de projetos para escolha; o seletor continua disponível dentro do fluxograma."
+		]
+	},
+	{
 		"version": "0.1.5",
 		"date": "2026-11-27",
 		"changes": [

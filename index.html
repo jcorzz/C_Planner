@@ -44,11 +44,6 @@
 
         <section class="page-section hidden" id="flowchart-view">
           <div class="page-heading flow-heading">
-            <div>
-              <div class="eyebrow"><span class="eyebrow-rule"></span> PLANO VISUAL</div>
-              <h1>Fluxograma</h1>
-              <p class="page-subtitle">Organize as atividades que levam aos entregáveis do projeto.</p>
-            </div>
             <div class="flow-actions">
               <label class="flow-project-picker"><span>Projeto</span><select id="flow-project-select"><option value="">Selecione um projeto</option></select></label>
               <button class="button button-secondary" id="auto-layout-button" title="Centralizar e enquadrar o fluxograma">Organizar</button>
@@ -65,17 +60,13 @@
           </div>
           <div class="flow-canvas-wrap">
             <div id="flow-canvas" class="flow-canvas"></div>
+            <div id="flow-project-list" class="flow-project-list hidden"></div>
             <div id="flow-empty" class="flow-empty"><div class="flow-empty-mark">⌘</div><h2 id="flow-empty-title">Selecione ou cadastre um projeto</h2><p id="flow-empty-description">O projeto será o bloco inicial do fluxograma.</p><button class="button button-primary" id="flow-empty-action">＋ Cadastrar projeto</button></div>
           </div>
         </section>
 
         <section class="page-section" id="team-view">
           <div class="page-heading">
-            <div>
-              <div class="eyebrow"><span class="eyebrow-rule"></span> VISÃO CONSOLIDADA</div>
-              <h1>C_Planner</h1>
-              <p class="page-subtitle">Atividades planejadas em todos os projetos ativos.</p>
-            </div>
             <div class="heading-actions">
               <button class="button button-secondary" id="export-button"><span class="button-symbol">⇧</span> Exportar backup</button>
               <button class="button button-primary" id="add-task-button"><span class="button-symbol">＋</span> Nova atividade</button>

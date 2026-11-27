@@ -1,4 +1,4 @@
-﻿import { createFlowchart } from "./flowchart.js";
+import { createFlowchart } from "./flowchart.js";
 import changelog from "./changelog.json";
 
 const APP_VERSION = __APP_VERSION__;
@@ -168,6 +168,19 @@ function isDeliverableCompleted(deliverable) {
   return Boolean(project?.completedPhases?.[deliverable.phase]);
 }
 
+const PHASE_STATUSES = ["Não iniciada", "Em andamento", "Concluída", "Congelada"];
+
+function getPhaseStatus(project, phase) {
+  if (project?.completedPhases?.[phase]) return "Concluída";
+  const stored = project?.phaseStatus?.[phase];
+  return stored && stored !== "Concluída" && PHASE_STATUSES.includes(stored) ? stored : "Não iniciada";
+}
+
+function isDeliverableFrozen(deliverable) {
+  const project = projects.find((item) => item.id === deliverable?.projectId);
+  return !isDeliverableCompleted(deliverable) && getPhaseStatus(project, deliverable?.phase) === "Congelada";
+}
+
 function countOpenTasks(deliverableIds) {
   const ids = new Set(deliverableIds);
   return tasks.filter((task) => !CLOSED_TASK_STATUSES.includes(task.status) && getTaskDeliverableIds(task).some((id) => ids.has(id))).length;
@@ -222,7 +235,7 @@ function buildProjectReportHtml(project) {
   const phaseRows = phases.map((phase, index) => {
     const date = project.completedPhases?.[phase];
     const count = projectDeliverables.filter((item) => item.phase === phase).length;
-    return `<tr><td>${index + 1}</td><td>${escapeHtml(phase)}</td><td>${count}</td><td>${date ? `Concluída em ${fmtDate(date)}` : phase === BACKLOG_PHASE ? "—" : "Em andamento"}</td></tr>`;
+    return `<tr><td>${index + 1}</td><td>${escapeHtml(phase)}</td><td>${count}</td><td>${phase === BACKLOG_PHASE ? "—" : date ? `Concluída em ${fmtDate(date)}` : escapeHtml(getPhaseStatus(project, phase))}</td></tr>`;
   }).join("");
   const deliverableRows = projectDeliverables.map((item) => {
     const done = isDeliverableCompleted(item);
@@ -237,7 +250,13 @@ function buildProjectReportHtml(project) {
     .meta{color:#6e8175;margin-bottom:8px}table{width:100%;border-collapse:collapse}
     th,td{border:1px solid #d8e2dc;padding:6px 8px;text-align:left;vertical-align:top}
     thead th{background:#eef4f1}.info th{width:28%;background:#f5f8f5}.desc{white-space:pre-wrap}
-    tr{page-break-inside:avoid}</style></head><body>
+    tr{page-break-inside:avoid}
+    .brand-header{display:flex;align-items:center;gap:10px;background:#20694b;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .brand-header strong{font-size:15px;letter-spacing:.3px}.brand-header span{margin-left:auto;font-size:11px;opacity:.85}
+    .brand-footer{position:fixed;left:0;right:0;bottom:0;text-align:center;color:#6e8175;font-size:10px;border-top:1px solid #d8e2dc;padding-top:6px;background:#fff}
+    body{padding-bottom:30px}</style></head><body>
+    <div class="brand-header"><svg width="26" height="26" viewBox="0 0 26 26"><rect width="26" height="26" rx="7" fill="#c6e8d0"/><rect x="6" y="14" width="3.5" height="6" rx="1" fill="#20694b"/><rect x="11.2" y="10" width="3.5" height="10" rx="1" fill="#20694b"/><rect x="16.5" y="6" width="3.5" height="14" rx="1" fill="#20694b"/></svg><strong>C_Planner</strong><span>Relatório de projeto</span></div>
+    <div class="brand-footer">Gerado pelo C_Planner · ${escapeHtml(new Date().toLocaleDateString("pt-BR"))}</div>
     <h1>${escapeHtml(project.name)}</h1><div class="meta">Relatório gerado em ${escapeHtml(new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }))}</div>
     <h2>Informações do projeto</h2><table class="info">${field("Situação", project.status)}${field("Solicitante", project.requester)}${field("Solicitado via", project.requestedVia)}${field("Data da solicitação", project.requestDate ? fmtDate(project.requestDate) : "")}<tr><th>Descrição</th><td class="desc">${escapeHtml(project.description || "—")}</td></tr></table>
     <h2>Fases</h2><table><thead><tr><th>#</th><th>Fase</th><th>Entregáveis</th><th>Situação</th></tr></thead><tbody>${phaseRows}</tbody></table>
@@ -297,7 +316,7 @@ function togglePhaseCompletion(projectId, phase) {
     deliverables.filter((item) => phaseDeliverableIds.includes(item.id) && !item.completedAt).forEach((item) => cascadeEntries.push({ kind: "Entregável", name: item.name, action: "Concluído", note: cascadeNote }));
     deliverables = deliverables.map((item) => phaseDeliverableIds.includes(item.id) ? { ...item, completedAt: item.completedAt || today } : item);
   }
-  projects = projects.map((item) => item.id === projectId ? { ...item, completedPhases } : item);
+  projects = projects.map((item) => item.id === projectId ? { ...item, completedPhases, phaseStatus: { ...(item.phaseStatus || {}), [phase]: reopening ? "Em andamento" : "Concluída" } } : item);
   logProjectHistory(projectId, [{ kind: "Fase", name: phase, action: reopening ? "Reaberta" : "Concluída" }, ...cascadeEntries]);
   saveAll();
   renderFlowchart();
@@ -608,7 +627,7 @@ function renderSecondary(view) {
   if (view === "projects") {
     const filteredProjects = projects.filter((project) => projectListFilter === "Todos" || project.status === projectListFilter);
     const sortedProjects = [...filteredProjects].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-    target.innerHTML = `<div class="secondary-heading"><div><div class="eyebrow"><span class="eyebrow-rule"></span> PORTFÓLIO</div><h1>Projetos</h1></div><div class="secondary-heading-actions"><select class="project-status-filter" id="project-list-filter" aria-label="Filtrar situação dos projetos"><option ${projectListFilter === "Ativo" ? "selected" : ""}>Ativo</option><option ${projectListFilter === "Encerrado" ? "selected" : ""}>Encerrado</option><option ${projectListFilter === "Todos" ? "selected" : ""}>Todos</option></select><button class="button button-primary" id="new-project-button"><span class="button-symbol">＋</span> Novo projeto</button></div></div><p class="section-description">${projects.filter((project) => project.status !== "Encerrado").length} projetos ativos · ${projects.filter((project) => project.status === "Encerrado").length} encerrados</p><div class="secondary-list">${sortedProjects.length ? sortedProjects.map((project) => { const projectTasks = tasks.filter((task) => task.project === project.name || (task.projectLinks || []).includes(project.id)); const deliverableCount = deliverables.filter((deliverable) => deliverable.projectId === project.id).length; return `<div class="secondary-row"><div><strong>${escapeHtml(project.name)}</strong><small>${projectTasks.length} atividades · ${deliverableCount} entregáveis${project.requester ? ` · Solicitante: ${escapeHtml(project.requester)}` : ""}${project.description ? ` · ${escapeHtml(project.description)}` : ""}</small></div><div class="secondary-row-actions"><button class="button button-secondary action-button" data-open-flow="${escapeHtml(project.id)}">Fluxograma</button><span class="status-pill ${project.status === "Encerrado" ? "status-cancelled" : "status-in-progress"}">${escapeHtml(project.status)}</span><button class="button button-secondary action-button" data-export-project="${escapeHtml(project.id)}">PDF</button><button class="button button-secondary action-button" data-edit-project="${escapeHtml(project.id)}">Editar</button><button class="button button-secondary action-button delete-project-button" data-delete-project="${escapeHtml(project.id)}">Excluir</button></div></div>`; }).join("") : `<div class="secondary-empty">Nenhum projeto ${projectListFilter === "Todos" ? "cadastrado" : projectListFilter.toLocaleLowerCase("pt-BR")}.</div>`}</div>`;
+    target.innerHTML = `<div class="secondary-heading"><div class="secondary-heading-actions"><select class="project-status-filter" id="project-list-filter" aria-label="Filtrar situação dos projetos"><option ${projectListFilter === "Ativo" ? "selected" : ""}>Ativo</option><option ${projectListFilter === "Encerrado" ? "selected" : ""}>Encerrado</option><option ${projectListFilter === "Todos" ? "selected" : ""}>Todos</option></select><button class="button button-primary" id="new-project-button"><span class="button-symbol">＋</span> Novo projeto</button></div></div><div class="secondary-list">${sortedProjects.length ? sortedProjects.map((project) => { const projectTasks = tasks.filter((task) => task.project === project.name || (task.projectLinks || []).includes(project.id)); const deliverableCount = deliverables.filter((deliverable) => deliverable.projectId === project.id).length; return `<div class="secondary-row"><div><strong>${escapeHtml(project.name)}</strong><small>${projectTasks.length} atividades · ${deliverableCount} entregáveis${project.requester ? ` · Solicitante: ${escapeHtml(project.requester)}` : ""}${project.description ? ` · ${escapeHtml(project.description)}` : ""}</small></div><div class="secondary-row-actions"><button class="button button-secondary action-button" data-open-flow="${escapeHtml(project.id)}">Fluxograma</button><span class="status-pill ${project.status === "Encerrado" ? "status-cancelled" : "status-in-progress"}">${escapeHtml(project.status)}</span><button class="button button-secondary action-button" data-export-project="${escapeHtml(project.id)}">PDF</button><button class="button button-secondary action-button" data-edit-project="${escapeHtml(project.id)}">Editar</button><button class="button button-secondary action-button delete-project-button" data-delete-project="${escapeHtml(project.id)}">Excluir</button></div></div>`; }).join("") : `<div class="secondary-empty">Nenhum projeto ${projectListFilter === "Todos" ? "cadastrado" : projectListFilter.toLocaleLowerCase("pt-BR")}.</div>`}</div>`;
     target.querySelector("#project-list-filter").addEventListener("change", (event) => {
       projectListFilter = event.target.value;
       renderSecondary("projects");
@@ -623,18 +642,22 @@ function renderSecondary(view) {
     target.querySelectorAll("[data-delete-project]").forEach((button) => button.addEventListener("click", () => deleteProject(button.dataset.deleteProject)));
   } else if (view === "people") {
     const sortedPeople = [...people].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-    target.innerHTML = `<div class="secondary-heading"><div><div class="eyebrow"><span class="eyebrow-rule"></span> RECURSOS</div><h1>Pessoas</h1></div><button class="button button-primary" id="new-person-button"><span class="button-symbol">＋</span> Nova pessoa</button></div><p class="section-description">${people.length} pessoas cadastradas no time.</p><div class="secondary-list">${sortedPeople.length ? sortedPeople.map((person) => { const assigned = tasks.filter((task) => (task.people || []).includes(person.name) && !["Concluída", "Cancelada"].includes(task.status)); return `<div class="secondary-row"><div><strong>${escapeHtml(person.name)}</strong><small>${assigned.length} atividades ativas · ${new Set(assigned.map((task) => task.project)).size} projetos · ${escapeHtml(person.capacityHoursPerDay || 8)} h/dia</small></div><div class="secondary-row-actions"><span class="assignee-chip"><span class="assignee-avatar">${escapeHtml(initials(person.name))}</span>${escapeHtml(person.name)}</span><button class="button button-secondary action-button" data-edit-person="${escapeHtml(person.id)}">Editar</button></div></div>`; }).join("") : '<div class="secondary-empty">Nenhuma pessoa cadastrada.</div>'}</div>`;
+    target.innerHTML = `<div class="secondary-heading"><button class="button button-primary" id="new-person-button"><span class="button-symbol">＋</span> Nova pessoa</button></div><div class="secondary-list">${sortedPeople.length ? sortedPeople.map((person) => { const assigned = tasks.filter((task) => (task.people || []).includes(person.name) && !["Concluída", "Cancelada"].includes(task.status)); return `<div class="secondary-row"><div><strong>${escapeHtml(person.name)}</strong><small>${assigned.length} atividades ativas · ${new Set(assigned.map((task) => task.project)).size} projetos · ${escapeHtml(person.capacityHoursPerDay || 8)} h/dia</small></div><div class="secondary-row-actions"><span class="assignee-chip"><span class="assignee-avatar">${escapeHtml(initials(person.name))}</span>${escapeHtml(person.name)}</span><button class="button button-secondary action-button" data-edit-person="${escapeHtml(person.id)}">Editar</button></div></div>`; }).join("") : '<div class="secondary-empty">Nenhuma pessoa cadastrada.</div>'}</div>`;
     target.querySelector("#new-person-button").addEventListener("click", () => openPersonDialog());
     target.querySelectorAll("[data-edit-person]").forEach((button) => button.addEventListener("click", () => openPersonDialog(button.dataset.editPerson)));
   } else if (view === "notifications") {
     const upcoming = tasks.filter((task) => task.end && !["Concluída", "Cancelada"].includes(task.status) && dateDistance(task.end) <= 1 && dateDistance(task.end) >= 0).sort((a, b) => a.end.localeCompare(b.end));
-    target.innerHTML = `<div class="eyebrow"><span class="eyebrow-rule"></span> LEMBRETES LOCAIS</div><h1>Notificações</h1><p class="section-description">Atividades com encerramento previsto para amanhã ou hoje.</p><div class="secondary-list">${upcoming.length ? upcoming.map((task) => `<div class="secondary-row"><div><strong>${escapeHtml(task.name)}</strong><small>${escapeHtml(task.project)} · ${(task.people || []).map(escapeHtml).join(", ") || "Sem responsável"}</small></div><span class="status-pill status-blocked">${dateDistance(task.end) === 0 ? "Vence hoje" : "Vence amanhã"}</span></div>`).join("") : '<div class="secondary-empty">Nenhum lembrete próximo no momento.</div>'}</div>`;
+    target.innerHTML = `<div class="secondary-list">${upcoming.length ? upcoming.map((task) => `<div class="secondary-row"><div><strong>${escapeHtml(task.name)}</strong><small>${escapeHtml(task.project)} · ${(task.people || []).map(escapeHtml).join(", ") || "Sem responsável"}</small></div><span class="status-pill status-blocked">${dateDistance(task.end) === 0 ? "Vence hoje" : "Vence amanhã"}</span></div>`).join("") : '<div class="secondary-empty">Nenhum lembrete próximo no momento.</div>'}</div>`;
   } else if (view === "settings") {
-    target.innerHTML = `<div class="eyebrow"><span class="eyebrow-rule"></span> DADOS LOCAIS</div><h1>Configurações e backup</h1><p class="section-description">Gerencie times externos, faça cópias dos dados e importe feriados.</p><div class="secondary-list"><div class="secondary-row"><div><strong>Backup dos dados</strong><small>Atividades, times e feriados cadastrados neste navegador.</small></div><span>${tasks.length} atividades</span></div><div class="secondary-row"><div><strong>Feriados importados</strong><small>Datas carregadas de arquivos de calendário .ics.</small></div><span>${holidays.length} datas</span></div></div><div class="settings-actions"><button class="button button-primary" id="settings-export">⇧ Exportar backup</button><button class="button button-secondary" id="settings-import">⇩ Importar backup</button><button class="button button-secondary" id="settings-ics">＋ Importar calendário .ics</button></div>`;
+    target.innerHTML = `<div class="secondary-list"><div class="secondary-row"><div><strong>Backup dos dados</strong><small>Atividades, times e feriados cadastrados neste navegador.</small></div><span>${tasks.length} atividades</span></div><div class="secondary-row"><div><strong>Feriados importados</strong><small>Datas carregadas de arquivos de calendário .ics.</small></div><span>${holidays.length} datas</span></div></div><div class="settings-actions"><button class="button button-primary" id="settings-export">⇧ Exportar backup</button><button class="button button-secondary" id="settings-import">⇩ Importar backup</button><button class="button button-secondary" id="settings-ics">＋ Importar calendário .ics</button><button class="button button-secondary" id="settings-update">⟳ Buscar atualizações</button></div>`;
     renderTeamSettings(target);
     target.querySelector("#settings-export").addEventListener("click", exportBackup);
     target.querySelector("#settings-import").addEventListener("click", () => document.querySelector("#backup-file").click());
     target.querySelector("#settings-ics").addEventListener("click", () => document.querySelector("#ics-file").click());
+    target.querySelector("#settings-update").addEventListener("click", () => {
+      if (window.cPlanner?.checkForUpdates) window.cPlanner.checkForUpdates();
+      else showToast("A busca de atualizações só funciona no aplicativo instalado.");
+    });
   }
 }
 
@@ -701,7 +724,7 @@ function renderChangelog() {
     }
     return 0;
   });
-  target.innerHTML = `<div class="eyebrow"><span class="eyebrow-rule"></span> HISTÓRICO DE VERSÕES</div><h1>Changelog</h1><p class="section-description">Novidades, melhorias e correções publicadas no C_Planner.</p><div class="changelog-version-strip"><div><span>Versão instalada</span><strong id="installed-version">Consultando...</strong></div></div><div class="changelog-list">${entries.length ? entries.map((entry) => `<article class="changelog-entry"><header><h2>v${escapeHtml(entry.version)}</h2>${entry.date ? `<time datetime="${escapeHtml(entry.date)}">${escapeHtml(new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(`${entry.date}T12:00:00`)))}</time>` : ""}</header><ul>${(entry.changes || []).map((change) => `<li>${escapeHtml(change)}</li>`).join("")}</ul></article>`).join("") : '<p class="changelog-empty">Ainda não há alterações publicadas. As próximas versões aparecerão aqui.</p>'}</div>`;
+  target.innerHTML = `<div class="changelog-version-strip"><div><span>Versão instalada</span><strong id="installed-version">Consultando...</strong></div></div><div class="changelog-list">${entries.length ? entries.map((entry) => `<article class="changelog-entry"><header><h2>v${escapeHtml(entry.version)}</h2>${entry.date ? `<time datetime="${escapeHtml(entry.date)}">${escapeHtml(new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(`${entry.date}T12:00:00`)))}</time>` : ""}</header><ul>${(entry.changes || []).map((change) => `<li>${escapeHtml(change)}</li>`).join("")}</ul></article>`).join("") : '<p class="changelog-empty">Ainda não há alterações publicadas. As próximas versões aparecerão aqui.</p>'}</div>`;
   const installedVersion = document.querySelector("#installed-version");
   if (!window.cPlanner?.getInstalledVersion) {
     installedVersion.textContent = `v${APP_VERSION}`;
@@ -772,7 +795,7 @@ function renderFlowchart() {
   }
   const nodes = [
     ...(project ? [{ id: `project:${project.id}`, type: "project", record: project }] : []),
-    ...projectPhases.map((phase, index) => ({ id: `phase:${project.id}:${index}`, type: "phase", record: { id: `${project.id}:${index}`, projectId: project.id, name: phase,     phaseIndex: index, completedAt: project.completedPhases?.[phase] || "" } })),
+    ...projectPhases.map((phase, index) => ({ id: `phase:${project.id}:${index}`, type: "phase", record: { id: `${project.id}:${index}`, projectId: project.id, name: phase,     phaseIndex: index, completedAt: project.completedPhases?.[phase] || "", status: phase === BACKLOG_PHASE ? "" : getPhaseStatus(project, phase) } })),
         ...projectDeliverables.map((deliverable) => ({ id: `deliverable:${deliverable.id}`, type: "deliverable", record: { ...deliverable, completed: isDeliverableCompleted(deliverable), completedAt: deliverable.completedAt || project.completedPhases?.[deliverable.phase] || "", phaseIndex: Math.max(0, projectPhases.indexOf(deliverable.phase || BACKLOG_PHASE)) } })),
     ...projectTasks.flatMap((task) => {
       const pathDeliverables = [...(taskDeliverablePaths.get(task.id) || [])];
@@ -817,7 +840,24 @@ function renderFlowchart() {
   graphEdges = graphEdges.filter((edge) => edge.relation !== "phase-deliverable" && !edge.source.startsWith("phase:"));
   saveAll();
   const hasNodes = nodes.length > 0;
-  document.querySelector("#flow-empty").classList.toggle("hidden", hasNodes);
+  const showProjectList = !project && visibleProjects.length > 0;
+  const projectList = document.querySelector("#flow-project-list");
+  projectList.classList.toggle("hidden", !showProjectList);
+  if (showProjectList) {
+    projectList.innerHTML = `<h2>Escolha um projeto</h2><div class="flow-project-cards">${visibleProjects.map((item) => {
+      const taskCount = tasks.filter((task) => task.project === item.name || (task.projectLinks || []).includes(item.id)).length;
+      const deliverableCount = deliverables.filter((deliverable) => deliverable.projectId === item.id).length;
+      return `<button type="button" class="flow-project-card" data-flow-project="${escapeHtml(item.id)}"><strong>${escapeHtml(item.name)}</strong><small>${taskCount} atividades · ${deliverableCount} entregáveis</small><span class="status-pill ${item.status === "Encerrado" ? "status-cancelled" : "status-in-progress"}">${escapeHtml(item.status)}</span></button>`;
+    }).join("")}</div>`;
+    projectList.querySelectorAll("[data-flow-project]").forEach((button) => button.addEventListener("click", () => {
+      selectedFlowProjectId = button.dataset.flowProject;
+      renderFlowchart();
+    }));
+  }
+  document.querySelector(".flow-project-picker").classList.toggle("hidden", !project);
+  document.querySelector(".flow-legend").classList.toggle("hidden", !project);
+  document.querySelector("#auto-layout-button").classList.toggle("hidden", !project);
+  document.querySelector("#flow-empty").classList.toggle("hidden", hasNodes || showProjectList);
   document.querySelector("#flow-canvas").classList.toggle("hidden", !hasNodes);
   document.querySelector("#flow-empty-title").textContent = "Selecione ou cadastre um projeto";
   document.querySelector("#flow-empty-description").textContent = !project
@@ -859,9 +899,10 @@ function chooseNewActivity(relation = "after") {
     const deliverable = deliverables.find((item) => item.id === id && item.projectId === project.id);
     return deliverable && (!pendingFlowCreation?.sourcePhase || (deliverable.phase || BACKLOG_PHASE) === pendingFlowCreation.sourcePhase);
   }) || "";
-  if (inheritedDeliverableId && isDeliverableCompleted(deliverables.find((item) => item.id === inheritedDeliverableId))) {
+  const inheritedDeliverable = deliverables.find((item) => item.id === inheritedDeliverableId);
+  if (inheritedDeliverableId && (isDeliverableCompleted(inheritedDeliverable) || isDeliverableFrozen(inheritedDeliverable))) {
     document.querySelector("#add-type-dialog").close();
-    return showToast("Este entregável está concluído e não aceita novas atividades. Reabra-o para continuar.");
+    return showToast(isDeliverableFrozen(inheritedDeliverable) ? "A fase deste entregável está congelada e não aceita novas atividades. Descongele-a para continuar." : "Este entregável está concluído e não aceita novas atividades. Reabra-o para continuar.");
   }
   const direction = relation === "before" ? "left" : "right";
   const sourcePosition = pendingFlowCreation?.sourcePosition;
@@ -879,7 +920,7 @@ function chooseNewDeliverable() {
 
 function openShareDialog() {
   const project = projects.find((item) => item.id === selectedFlowProjectId);
-  const projectDeliverables = deliverables.filter((item) => item.projectId === project?.id && !isDeliverableCompleted(item));
+  const projectDeliverables = deliverables.filter((item) => item.projectId === project?.id && !isDeliverableCompleted(item) && !isDeliverableFrozen(item));
   const availableTasks = tasks.filter((task) => !projectDeliverables.every((deliverable) => getTaskDeliverableIds(task).includes(deliverable.id)));
   if (!projectDeliverables.length) return showToast("Crie primeiro um entregável neste projeto.");
   if (!availableTasks.length) return showToast("Não há atividades de outros projetos para compartilhar.");
@@ -1011,9 +1052,9 @@ function updatePeopleSuggestions() {
 
 function refreshDeliverableOptions(projectName, selectedDeliverableId = "") {
   const project = projects.find((item) => item.name === projectName);
-  const projectDeliverables = project ? deliverables.filter((item) => item.projectId === project.id && (item.id === selectedDeliverableId || !isDeliverableCompleted(item))) : [];
+  const projectDeliverables = project ? deliverables.filter((item) => item.projectId === project.id && (item.id === selectedDeliverableId || (!isDeliverableCompleted(item) && !isDeliverableFrozen(item)))) : [];
   const select = document.querySelector("#task-deliverable");
-  select.innerHTML = `<option value="">Selecione um entregável</option>${projectDeliverables.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}${isDeliverableCompleted(item) ? " (concluído)" : ""}</option>`).join("")}`;
+  select.innerHTML = `<option value="">Selecione um entregável</option>${projectDeliverables.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}${isDeliverableCompleted(item) ? " (concluído)" : isDeliverableFrozen(item) ? " (fase congelada)" : ""}</option>`).join("")}`;
   select.disabled = projectDeliverables.length === 0;
   select.value = selectedDeliverableId;
 }
@@ -1057,8 +1098,9 @@ function handleTaskSave(event) {
     showToast("Selecione um entregável deste projeto.");
     return;
   }
-  if (deliverableId && deliverableId !== oldTask?.deliverableId && isDeliverableCompleted(deliverables.find((item) => item.id === deliverableId))) {
-    showToast("Este entregável está concluído e não aceita novas atividades.");
+  const chosenDeliverable = deliverables.find((item) => item.id === deliverableId);
+  if (deliverableId && deliverableId !== oldTask?.deliverableId && (isDeliverableCompleted(chosenDeliverable) || isDeliverableFrozen(chosenDeliverable))) {
+    showToast(isDeliverableFrozen(chosenDeliverable) ? "A fase deste entregável está congelada e não aceita novas atividades." : "Este entregável está concluído e não aceita novas atividades.");
     return;
   }
   if (unknownPeople.length) {
@@ -1193,10 +1235,15 @@ function updateProjectCompletionUi() {
   document.querySelectorAll("#project-phases-list .project-phase-row").forEach((row) => {
     const date = project?.completedPhases?.[row.dataset.phase];
     const badge = row.querySelector(".completion-badge");
-    const button = row.querySelector(".completion-toggle");
+    const select = row.querySelector("[data-phase-status]");
     if (badge) { badge.textContent = date ? `Concluída em ${formatCompletionDate(date)}` : ""; badge.classList.toggle("hidden", !date); }
-    if (button) button.textContent = date ? "Reabrir" : "Concluir";
+    if (select) {
+      if (date) select.value = "Concluída";
+      else if (select.value === "Concluída") select.value = getPhaseStatus(project, row.dataset.phase);
+      select.dataset.status = select.value;
+    }
     row.classList.toggle("is-completed", Boolean(date));
+    row.classList.toggle("is-frozen", select?.value === "Congelada");
   });
   document.querySelectorAll("#project-deliverable-rows tr[data-deliverable-id]").forEach((row) => {
     const deliverable = deliverables.find((item) => item.id === row.dataset.deliverableId);
@@ -1213,11 +1260,74 @@ function updateProjectCompletionUi() {
 function renderProjectPhaseList(phases) {
   const phaseList = document.querySelector("#project-phases-list");
   const orderedPhases = [...phases.filter((phase) => phase !== BACKLOG_PHASE), BACKLOG_PHASE];
-  phaseList.innerHTML = orderedPhases.map((phase, index) => `<li class="project-phase-row" data-phase="${escapeHtml(phase)}"><span class="phase-order">${index + 1}</span><strong>${escapeHtml(phase)}</strong>${phase === BACKLOG_PHASE ? '<span class="phase-fixed-label">Fixo no final</span>' : `<span class="completion-badge hidden"></span><div class="phase-row-actions"><button class="button button-secondary completion-toggle" type="button" data-phase-complete="${escapeHtml(phase)}">Concluir</button><button class="icon-button phase-rename" type="button" data-phase-rename="${escapeHtml(phase)}" aria-label="Renomear fase ${escapeHtml(phase)}">···</button><button class="icon-button phase-move" type="button" data-phase-move="up" data-phase-index="${index}" aria-label="Mover ${escapeHtml(phase)} para cima" ${index === 0 ? "disabled" : ""}>↑</button><button class="icon-button phase-move" type="button" data-phase-move="down" data-phase-index="${index}" aria-label="Mover ${escapeHtml(phase)} para baixo">↓</button><button class="icon-button phase-remove" type="button" data-phase-remove="${escapeHtml(phase)}" aria-label="Remover fase ${escapeHtml(phase)}">×</button></div>`}</li>`).join("");
-  phaseList.querySelectorAll("[data-phase-complete]").forEach((button) => button.addEventListener("click", () => {
+  const statusMap = new Map(orderedPhases.map((phase) => [phase, getPhaseStatus(currentDialogProject(), phase)]));
+  phaseList.querySelectorAll("[data-phase-status]").forEach((select) => statusMap.set(select.dataset.phaseStatus, select.value));
+  const phaseMeta = (phase) => {
+    const ids = deliverables.filter((item) => item.projectId === currentDialogProject()?.id && item.phase === phase).map((item) => item.id);
+    const open = ids.length ? countOpenTasks(ids) : 0;
+    const parts = [ids.length ? `${ids.length} ${ids.length === 1 ? "entregável" : "entregáveis"}` : "Sem entregáveis"];
+    if (open) parts.push(`${open} ${open === 1 ? "atividade aberta" : "atividades abertas"}`);
+    return parts.join(" · ");
+  };
+  phaseList.innerHTML = orderedPhases.map((phase) => phase === BACKLOG_PHASE
+    ? `<li class="project-phase-row phase-backlog" data-phase="${escapeHtml(phase)}"><div class="phase-main"><strong>${escapeHtml(phase)}</strong><small class="phase-meta">${phaseMeta(phase)}</small></div><span class="phase-fixed-label">Fixo no final</span></li>`
+    : `<li class="project-phase-row" data-phase="${escapeHtml(phase)}" draggable="true"><button class="phase-grip" type="button" data-phase-grip="${escapeHtml(phase)}" aria-label="Reordenar fase ${escapeHtml(phase)} (arraste ou use as setas ↑ ↓)" title="Arraste para reordenar">⠿</button><div class="phase-main"><strong>${escapeHtml(phase)}</strong><small class="phase-meta">${phaseMeta(phase)}<span class="completion-badge hidden"></span></small></div><select class="phase-status-select" data-status="${statusMap.get(phase)}" data-phase-status="${escapeHtml(phase)}" aria-label="Status da fase ${escapeHtml(phase)}">${PHASE_STATUSES.map((status) => `<option value="${status}" ${status === statusMap.get(phase) ? "selected" : ""}>${status}</option>`).join("")}</select><details class="phase-menu"><summary aria-label="Mais ações da fase ${escapeHtml(phase)}">⋯</summary><div class="phase-menu-list"><button type="button" data-phase-rename="${escapeHtml(phase)}">Renomear</button><button type="button" class="danger" data-phase-remove="${escapeHtml(phase)}">Remover</button></div></details></li>`).join("");
+  phaseList.querySelectorAll(".phase-menu").forEach((menu) => {
+    menu.addEventListener("toggle", () => {
+      if (!menu.open) return;
+      const rect = menu.querySelector("summary").getBoundingClientRect();
+      const list = menu.querySelector(".phase-menu-list");
+      list.style.top = `${rect.bottom + 2}px`;
+      list.style.left = `${Math.max(8, rect.right - list.offsetWidth)}px`;
+    });
+    menu.addEventListener("click", (event) => { if (event.target.closest(".phase-menu-list")) setTimeout(() => menu.removeAttribute("open"), 0); });
+  });
+  let draggedPhase = "";
+  const reorderPhases = (phase, targetIndex) => {
+    const current = [...phaseList.querySelectorAll(".project-phase-row")].map((row) => row.dataset.phase).filter((name) => name !== BACKLOG_PHASE);
+    const from = current.indexOf(phase);
+    const to = Math.max(0, Math.min(current.length - 1, targetIndex));
+    if (from < 0 || from === to) return;
+    current.splice(to, 0, current.splice(from, 1)[0]);
+    renderProjectPhaseList(current);
+    refreshDeliverablePhaseOptions(current);
+    updateProjectCompletionUi();
+    phaseList.querySelector(`[data-phase-grip="${CSS.escape(phase)}"]`)?.focus();
+  };
+  phaseList.querySelectorAll(".project-phase-row[draggable]").forEach((row) => {
+    row.addEventListener("dragstart", (event) => { draggedPhase = row.dataset.phase; row.classList.add("is-dragging"); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", draggedPhase); });
+    row.addEventListener("dragend", () => { row.classList.remove("is-dragging"); phaseList.querySelectorAll(".drag-over").forEach((item) => item.classList.remove("drag-over")); });
+    row.addEventListener("dragover", (event) => { if (!draggedPhase) return; event.preventDefault(); row.classList.add("drag-over"); });
+    row.addEventListener("dragleave", () => row.classList.remove("drag-over"));
+    row.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const phase = draggedPhase;
+      draggedPhase = "";
+      const names = [...phaseList.querySelectorAll(".project-phase-row[draggable]")].map((item) => item.dataset.phase);
+      if (phase) reorderPhases(phase, names.indexOf(row.dataset.phase));
+    });
+  });
+  phaseList.querySelectorAll("[data-phase-grip]").forEach((grip) => grip.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    const names = [...phaseList.querySelectorAll(".project-phase-row[draggable]")].map((item) => item.dataset.phase);
+    reorderPhases(grip.dataset.phaseGrip, names.indexOf(grip.dataset.phaseGrip) + (event.key === "ArrowUp" ? -1 : 1));
+  }));
+  phaseList.querySelectorAll("[data-phase-status]").forEach((select) => select.addEventListener("change", () => {
+    const phase = select.dataset.phaseStatus;
     const project = currentDialogProject();
-    if (!project || !project.phases.includes(button.dataset.phaseComplete)) return showToast("Salve o projeto antes de concluir esta fase.");
-    togglePhaseCompletion(project.id, button.dataset.phaseComplete);
+    const wasCompleted = Boolean(project?.completedPhases?.[phase]);
+    const target = select.value;
+    if ((target === "Concluída" || wasCompleted) && (!project || !project.phases.includes(phase))) {
+      select.value = getPhaseStatus(project, phase);
+      return showToast("Salve o projeto antes de concluir esta fase.");
+    }
+    if (target === "Concluída" && !wasCompleted) togglePhaseCompletion(project.id, phase);
+    else if (target !== "Concluída" && wasCompleted) {
+      togglePhaseCompletion(project.id, phase);
+      select.value = target;
+    }
+    updateProjectCompletionUi();
   }));
   phaseList.querySelectorAll("[data-phase-rename]").forEach((button) => button.addEventListener("click", () => {
     const oldName = button.dataset.phaseRename;
@@ -1229,20 +1339,15 @@ function renderProjectPhaseList(phases) {
       showToast("O nome precisa ser único e diferente de Backlog.");
       return;
     }
+    const previousStatus = phaseList.querySelector(`[data-phase-status="${CSS.escape(oldName)}"]`)?.value;
     renderProjectPhaseList(current.map((phase) => phase === oldName ? name : phase));
+    const renamedSelect = phaseList.querySelector(`[data-phase-status="${CSS.escape(name)}"]`);
+    if (renamedSelect && previousStatus) renamedSelect.value = previousStatus;
     document.querySelectorAll("[data-deliverable-phase]").forEach((select) => {
       if (select.value === oldName) select.value = name;
     });
     refreshDeliverablePhaseOptions();
-  }));
-  phaseList.querySelectorAll("[data-phase-move]").forEach((button) => button.addEventListener("click", () => {
-    const current = [...phaseList.querySelectorAll(".project-phase-row")].map((row) => row.dataset.phase);
-    const index = Number(button.dataset.phaseIndex);
-    const target = button.dataset.phaseMove === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= current.length - 1) return;
-    [current[index], current[target]] = [current[target], current[index]];
-    renderProjectPhaseList(current);
-    refreshDeliverablePhaseOptions(current);
+    updateProjectCompletionUi();
   }));
   phaseList.querySelectorAll("[data-phase-remove]").forEach((button) => button.addEventListener("click", () => {
     const removed = button.dataset.phaseRemove;
@@ -1313,8 +1418,8 @@ function openProjectDialog(id = "") {
   document.querySelector("#project-request-date").value = project?.requestDate || "";
   const projectDeliverables = project ? deliverables.filter((item) => item.projectId === project.id) : [];
   const phases = [...(project?.phases || projectDeliverables.map((item) => item.phase).filter((phase) => phase && phase !== BACKLOG_PHASE))].filter((phase) => phase !== BACKLOG_PHASE);
+  document.querySelector("#project-phases-list").replaceChildren();
   renderProjectPhaseList([...new Set(phases), BACKLOG_PHASE]);
-  document.querySelector("#new-project-phase").value = "";
   document.querySelector("#new-project-deliverable").value = "";
   document.querySelector("#project-deliverable-rows").replaceChildren();
   const orderedPhases = [...new Set(phases), BACKLOG_PHASE];
@@ -1349,6 +1454,7 @@ function handleProjectSave(event) {
   const project = { ...oldProject, id, name, status: document.querySelector("#project-status").value, description: document.querySelector("#project-description").value.trim(), requester: document.querySelector("#project-requester").value.trim(), requestedVia: document.querySelector("#project-requested-via").value, requestDate: document.querySelector("#project-request-date").value, phases };
   const completedPhases = Object.fromEntries(Object.entries(oldProject?.completedPhases || {}).filter(([phase]) => phases.includes(phase)));
   project.completedPhases = completedPhases;
+  project.phaseStatus = Object.fromEntries([...document.querySelectorAll("#project-phases-list [data-phase-status]")].filter((select) => phases.includes(select.dataset.phaseStatus)).map((select) => [select.dataset.phaseStatus, completedPhases[select.dataset.phaseStatus] ? "Concluída" : select.value === "Concluída" ? "Em andamento" : select.value]));
   const oldDeliverablesForCheck = deliverables.filter((item) => item.projectId === id);
   const movedIntoCompleted = deliverableRows.find((row) => {
     const phase = row.querySelector("[data-deliverable-phase]").value;

@@ -108,6 +108,19 @@ function configureAutoUpdater() {
   });
 }
 
+ipcMain.handle("app:check-updates", async () => {
+  if (!app.isPackaged || testBuild || devServerUrl) {
+    sendUpdateStatus("A busca de atualizações só funciona no aplicativo instalado.");
+    return;
+  }
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    console.error("Falha ao verificar atualizações do C_Planner:", error);
+    sendUpdateStatus("Não foi possível verificar atualizações. O C_Planner continuará funcionando normalmente.");
+  }
+});
+
 function createWindow() {
   const window = new BrowserWindow({
     width: 1440,

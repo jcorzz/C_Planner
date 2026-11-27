@@ -19,6 +19,18 @@
 .filter-button:hover { color: #17677a; }
 .form-field input:focus,.form-field select:focus,.form-field textarea:focus { border-color: #5c9aa8; box-shadow: 0 0 0 2px #e5f1f3; }
 .secondary-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+#team-view .page-heading h1 { margin: 8px 0 18px; font-size: 25px; }
+#team-view .page-heading .section-description { margin: -8px 0 0; color: #7d8881; font-size: 12px; }
+.page-heading { justify-content: flex-end; margin-bottom: 18px; }
+.secondary-heading { justify-content: flex-end; }
+.secondary-view > :first-child { margin-top: 0; }
+.flow-project-list { padding: 18px; }
+.flow-project-list h2 { margin: 6px 0 14px; font-size: 14px; color: #344239; }
+.flow-project-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.flow-project-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 16px; border: 1px solid #e3e8e2; border-radius: 8px; background: #fff; font: inherit; text-align: left; cursor: pointer; }
+.flow-project-card:hover, .flow-project-card:focus-visible { border-color: #5aae7d; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.flow-project-card strong { color: #1d2925; font-size: 13px; }
+.flow-project-card small { color: #8e9991; font-size: 10px; }
 .secondary-row-actions { display: flex; align-items: center; gap: 8px; }
 .action-button { min-height: 26px; padding: 0 9px; font-size: 9px; }
 .field-note { color: #87938a; font-size: 9px; font-weight: 400; }
@@ -155,6 +167,31 @@
 .deliverable-row-actions{display:flex;gap:6px;align-items:center}
 .completion-toggle{padding:4px 10px;font-size:12px;white-space:nowrap}
 .completion-toggle.hidden{display:none}
+.project-planning-editor .phase-status-select{width:auto;min-width:130px;padding:4px 8px;font-size:12px}
+.project-phase-row .completion-badge{display:inline;margin:0 0 0 6px;padding:0;background:none;color:#2f6b3c;font-size:inherit;font-weight:600;white-space:nowrap}
+.project-phase-row .completion-badge.hidden{display:none}
+.project-phase-row .completion-badge::before{content:"· "}
+.project-phase-row{position:relative;gap:10px;min-height:46px;padding:6px 8px}
+.project-phase-row.phase-backlog{margin-top:10px;border-style:dashed;background:transparent;opacity:.85;min-height:38px}
+.project-phase-row.is-dragging{opacity:.4}
+.project-phase-row.drag-over{border-color:#17677a;box-shadow:0 -2px 0 #17677a}
+.phase-grip{border:0;background:none;color:#9aa89f;font-size:16px;line-height:1;cursor:grab;padding:2px 4px;border-radius:4px}
+.phase-grip:hover,.phase-grip:focus-visible{color:#17677a;background:#edf2ee}
+.phase-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.phase-main strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phase-meta{color:#7b8a80;font-size:11px}
+.project-planning-editor .phase-status-select{appearance:none;-webkit-appearance:none;width:auto;height:26px;min-height:0;line-height:1;flex:none;padding:0 24px 0 10px;border:0;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:#e8ece9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23667'/%3E%3C/svg%3E") no-repeat right 9px center;color:#55645b}
+.phase-status-select[data-status="Em andamento"]{background-color:#dcebfb;color:#1f5f99}
+.phase-status-select[data-status="Concluída"]{background-color:#dff0e2;color:#2f6b3c}
+.phase-status-select[data-status="Congelada"]{background-color:#d8eef2;color:#17677a}
+.phase-menu{position:relative}
+.phase-menu summary{list-style:none;cursor:pointer;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;color:#66746b;font-size:16px}
+.phase-menu summary::-webkit-details-marker{display:none}
+.phase-menu summary:hover,.phase-menu[open] summary{background:#edf2ee}
+.phase-menu-list{position:fixed;z-index:50;min-width:110px;display:flex;flex-direction:column;padding:4px;border:1px solid #e3e7e2;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.phase-menu-list button{border:0;background:none;text-align:left;padding:6px 10px;font-size:12px;border-radius:5px;cursor:pointer}
+.phase-menu-list button:hover{background:#f1f5f2}.phase-menu-list .danger{color:#b3382c}
+.project-phase-row.is-frozen{background:#eef4fa}
 .project-phase-row.is-completed,.project-planning-editor tr.is-completed{background:#f1f8f2}
 
 .history-list{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
