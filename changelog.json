@@ -1,5 +1,20 @@
 [
 	{
+		"version": "0.1.3",
+		"date": "2026-11-27",
+		"changes": [
+			"O aplicativo agora informa na tela quando está verificando atualizações, quando encontra uma nova versão e quando já está atualizado.",
+			"O instalador passa a criar sempre o atalho C_Planner na área de trabalho e no Menu Iniciar."
+		]
+	},
+	{
+		"version": "0.1.2",
+		"date": "2026-11-27",
+		"changes": [
+			"Primeira versão publicada como release no GitHub, com suporte a atualização automática."
+		]
+	},
+	{
 		"version": "0.1.1",
 		"date": "2026-11-26",
 		"changes": [
