@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="night" x2="0.9" y2="1"><stop stop-color="#152b37"/><stop offset="1" stop-color="#07131e"/></linearGradient>
+    <linearGradient id="gold" x2="0.8" y2="1"><stop stop-color="#f3c878"/><stop offset=".52" stop-color="#b97831"/><stop offset="1" stop-color="#78471d"/></linearGradient>
+    <linearGradient id="paper" x2="0.2" y2="1"><stop stop-color="#f7dca0"/><stop offset=".55" stop-color="#dbac5f"/><stop offset="1" stop-color="#b77b35"/></linearGradient>
+    <linearGradient id="quill" x2="1" y2="1"><stop stop-color="#9bc0d6"/><stop offset=".5" stop-color="#416d8e"/><stop offset="1" stop-color="#183a58"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="3"/><feOffset dy="3"/><feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="5" y="5" width="246" height="246" rx="42" fill="url(#night)"/>
+  <circle cx="125" cy="122" r="91" fill="none" stroke="#9c692d" stroke-width="4"/>
+  <circle cx="125" cy="122" r="82" fill="none" stroke="#d5a656" stroke-opacity=".55" stroke-width="1.5"/>
+  <path d="M125 16l7 16 15 7-15 7-7 16-7-16-15-7 15-7zM125 191l6 13 13 6-13 6-6 13-6-13-13-6 13-6z" fill="url(#gold)"/>
+  <g filter="url(#shadow)">
+    <path d="M44 76q8-11 20-8l9 5 105 0q12-1 19 9l8 13-10 9 2 49-10 7-1 25-16 7H65q-12-3-15-14l-7-17 8-12-7-14 8-11-8-12 9-12-8-12z" fill="url(#paper)" stroke="#643e20" stroke-width="3"/>
+    <path d="M52 72q-4-9 5-15l11 1 5 12-9 7zM192 77q11-3 15 7l7 13-12 8-10-10zM51 168l-8 12 7 15q4 8 15 8l2-13-9-8z" fill="url(#gold)" stroke="#5d391c" stroke-width="3"/>
+    <path d="M61 79h122q7 0 7 7v5H59q-8 0-8-6 0-5 10-6z" fill="#f7dda4" opacity=".8"/>
+    <path d="M83 96v61M155 94v63" stroke="#80552b" stroke-width="2" opacity=".75"/>
+    <path d="M81 105h63v13H84z" fill="#267b51" stroke="#243d30" stroke-width="2"/>
+    <path d="M99 123h73v13h-70z" fill="#397da1" stroke="#263c48" stroke-width="2"/>
+    <path d="M113 141h63v13h-60z" fill="#bf782b" stroke="#67431f" stroke-width="2"/>
+    <path d="M130 159h45v12h-42z" fill="#267b51" stroke="#243d30" stroke-width="2"/>
+    <path d="M64 98l4 5-4 5-4-5zM67 119l4 5-4 5-4-5zM65 142l4 5-4 5-4-5z" fill="#684625"/>
+  </g>
+  <g filter="url(#shadow)" transform="rotate(12 191 131)">
+    <path d="M190 201q-10-44-2-92 6-36 37-69 1 37-9 69-11 39-26 92z" fill="url(#quill)" stroke="#0d263b" stroke-width="3"/>
+    <path d="M190 198q15-75 34-150M196 159l-18-18M201 139l23-18M205 119l-17-12M211 98l18-14M217 79l-9-8" fill="none" stroke="#a8c9d8" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+    <path d="M190 197l-7 19 12-11z" fill="url(#gold)" stroke="#56391f" stroke-width="2"/>
+  </g>
+</svg>
