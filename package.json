@@ -1,0 +1,68 @@
+{
+  "name": "c-planner",
+  "version": "0.1.1",
+  "private": true,
+  "description": "Planejador local de projetos e atividades do time",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jcorzz/C_Planner.git"
+  },
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
+    "prebuild": "node scripts/generate-icon.cjs",
+    "build": "vite build",
+    "desktop": "npm run build && electron .",
+    "desktop:test": "npm run build && electron-builder --win --dir --config.directories.output=teste-local-atualizado --config.extraMetadata.testBuild=true",
+    "package:win": "node scripts/bump-version.cjs patch && npm run build && electron-builder --win nsis",
+    "package:win:minor": "node scripts/bump-version.cjs minor && npm run build && electron-builder --win nsis",
+    "package:win:major": "node scripts/bump-version.cjs major && npm run build && electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "@types/dagre": "^0.7.54",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "sharp": "^0.35.5",
+    "vite": "^7.0.0",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "local.planejamento.projetos",
+    "productName": "C_Planner",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "assets/c-planner.ico",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "jcorzz",
+      "repo": "C_Planner",
+      "releaseType": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/c-planner.ico"
+    },
+    "nsis": {
+      "installerIcon": "assets/c-planner.ico",
+      "uninstallerIcon": "assets/c-planner.ico"
+    }
+  },
+  "allowScripts": {
+    "electron@39.8.10": true,
+    "esbuild@0.28.2": true,
+    "electron-winstaller@5.4.0": true
+  },
+  "dependencies": {
+    "@antv/x6": "^3.1.8",
+    "dagre": "^0.8.5",
+    "electron-updater": "^6.8.11"
+  }
+}

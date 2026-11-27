@@ -1,0 +1,19 @@
+[
+	{
+		"version": "0.1.1",
+		"date": "2026-11-26",
+		"changes": [
+			"Adicionada tela de changelog acessível pelo botão de histórico no topo do aplicativo.",
+			"A tela apresenta a versão instalada e o histórico de alterações em ordem da mais recente para a mais antiga.",
+			"Atividades podem ser atribuídas ao time interno ou a um ou mais times externos cadastrados em Configurações, com filtro por time e identificação no fluxograma.",
+			"Projetos organizam entregáveis em fases próprias, com Backlog fixo no fim; o fluxograma mantém o início do plano à esquerda, exibe faixas apenas para fases planejadas e representa atividades compartilhadas sem duplicar seus registros.",
+			"Adicionada exclusão de projetos com confirmação, limpeza de dados exclusivos e transferência de atividades compartilhadas para projetos restantes.",
+			"Adicionado o início real da atividade, preenchido ao entrar em andamento e editável no formulário.",
+			"Corrigido o início do caminho no fluxograma: atividades criadas antes de um entregável recebem uma conexão do projeto.",
+			"O fluxograma preserva o zoom manual ao salvar atividades e trocar de projeto; Organizar e retornar à aba restauram o enquadramento padrão.",
+			"Títulos de tarefas e entregáveis no fluxograma quebram em até duas linhas, e atividades de times externos recebem um indicador visual.",
+			"As ligações do projeto no fluxograma passam por um corredor à esquerda dos cartões ao atender vários entregáveis.",
+			"A tabela exibe somente os nomes das fases, o cadastro de entregáveis ganhou entrada direta de nome e fase, e o título do programa passou a C_Planner."
+		]
+	}
+]

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#103b49" />
+    <title>C_Planner</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="./theme.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-lockup">
+          <img class="brand-icon" src="./c-planner-icon.svg" alt="" />
+          <div>
+            <div class="brand-name">C_Planner</div>
+          </div>
+        </div>
+
+        <div class="nav-label">ACOMPANHAMENTO</div>
+        <nav class="primary-nav" aria-label="Navegação principal">
+          <button class="nav-item" data-view="flowchart"><span class="nav-icon">⌘</span><span>Fluxograma</span></button>
+          <button class="nav-item active" data-view="team"><span class="nav-icon">▤</span><span>Tabela do time</span><kbd>1</kbd></button>
+          <button class="nav-item" data-view="projects"><span class="nav-icon">▦</span><span>Projetos</span></button>
+          <button class="nav-item" data-view="people"><span class="nav-icon">◎</span><span>Pessoas</span></button>
+          <button class="nav-item" data-view="notifications"><span class="nav-icon">◷</span><span>Notificações</span><span class="nav-count" id="notification-count">0</span></button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="local-status"><span class="status-pulse"></span><span>Dados salvos neste computador</span></div>
+          <button class="nav-item settings-link" data-view="settings"><span class="nav-icon">⚙</span><span>Configurações e backup</span></button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Meu time</span><span class="crumb-slash">/</span><strong id="breadcrumb-current">Tabela do time</strong></div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="changelog-button" title="Changelog" aria-label="Abrir changelog">◷</button>
+            <button class="icon-button" id="quick-backup" title="Exportar backup" aria-label="Exportar backup">⇧</button>
+          </div>
+        </header>
+
+        <section class="page-section hidden" id="flowchart-view">
+          <div class="page-heading flow-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-rule"></span> PLANO VISUAL</div>
+              <h1>Fluxograma</h1>
+              <p class="page-subtitle">Organize as atividades que levam aos entregáveis do projeto.</p>
+            </div>
+            <div class="flow-actions">
+              <label class="flow-project-picker"><span>Projeto</span><select id="flow-project-select"><option value="">Selecione um projeto</option></select></label>
+              <button class="button button-secondary" id="auto-layout-button" title="Centralizar e enquadrar o fluxograma">Organizar</button>
+            </div>
+          </div>
+          <div class="flow-legend">
+            <span><i class="flow-state state-not-started"></i>Não iniciada</span>
+            <span><i class="flow-state state-ready"></i>Pode iniciar</span>
+            <span><i class="flow-state state-progress"></i>Em andamento</span>
+            <span><i class="flow-state state-done"></i>Concluída</span>
+            <span><i class="flow-state state-blocked"></i>Bloqueada</span>
+            <span><i class="flow-state state-cancelled"></i>Cancelada</span>
+            <span class="flow-legend-note">Selecione um bloco e use + para adicionar uma etapa.</span>
+          </div>
+          <div class="flow-canvas-wrap">
+            <div id="flow-canvas" class="flow-canvas"></div>
+            <div id="flow-empty" class="flow-empty"><div class="flow-empty-mark">⌘</div><h2 id="flow-empty-title">Selecione ou cadastre um projeto</h2><p id="flow-empty-description">O projeto será o bloco inicial do fluxograma.</p><button class="button button-primary" id="flow-empty-action">＋ Cadastrar projeto</button></div>
+          </div>
+        </section>
+
+        <section class="page-section" id="team-view">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-rule"></span> VISÃO CONSOLIDADA</div>
+              <h1>C_Planner</h1>
+              <p class="page-subtitle">Atividades planejadas em todos os projetos ativos.</p>
+            </div>
+            <div class="heading-actions">
+              <button class="button button-secondary" id="export-button"><span class="button-symbol">⇧</span> Exportar backup</button>
+              <button class="button button-primary" id="add-task-button"><span class="button-symbol">＋</span> Nova atividade</button>
+            </div>
+          </div>
+
+          <div class="metric-strip" id="metrics"></div>
+
+          <section class="table-panel" aria-label="Atividades do time">
+            <div class="table-toolbar">
+              <div class="table-title-group">
+                <h2>Planejamento</h2>
+                <span class="row-count" id="row-count">0 atividades</span>
+              </div>
+              <div class="toolbar-tools">
+                <label class="search-field"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Buscar atividade ou projeto" /></label>
+                <div class="view-toggle" role="group" aria-label="Agrupamento da tabela">
+                  <button class="view-toggle-button selected" data-group="none" title="Lista única">☷</button>
+                  <button class="view-toggle-button" data-group="person" title="Agrupar por executor">P</button>
+                  <button class="view-toggle-button" data-group="phase" title="Agrupar por fase">F</button>
+                </div>
+                <button class="filter-button" id="clear-filters" title="Limpar filtros">↺ <span>Limpar</span></button>
+              </div>
+            </div>
+
+            <div class="filter-row">
+              <label class="filter-select"><span>Projeto</span><select id="project-filter"><option value="">Todos</option></select></label>
+              <label class="filter-select"><span>Fase</span><select id="phase-filter" disabled><option value="">Todas as fases</option></select></label>
+              <label class="filter-select"><span>Responsável</span><select id="person-filter"><option value="">Todos</option></select></label>
+              <label class="filter-select"><span>Time</span><select id="team-filter"><option value="">Todos os times</option></select></label>
+              <label class="filter-select"><span>Status</span><select id="status-filter"><option value="">Todos</option><option>Não iniciada</option><option>Em andamento</option><option>Bloqueada</option><option>Concluída</option><option>Cancelada</option></select></label>
+              <label class="filter-select date-filter"><span>Até a data</span><input id="date-filter" type="date" /></label>
+              <div class="active-projects-note"><span class="green-dot"></span> Projetos ativos</div>
+            </div>
+
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="th-activity">ATIVIDADE</th>
+                    <th>PROJETO / ENTREGÁVEL</th>
+                    <th>FASE</th>
+                    <th>TIME RESPONSÁVEL</th>
+                    <th>PESSOAS ALOCADAS</th>
+                    <th>PERÍODO PREVISTO</th>
+                    <th>STATUS</th>
+                    <th>PRIORIDADE</th>
+                    <th class="th-effort">ESFORÇO</th>
+                    <th class="th-menu"><span class="sr-only">Ações</span></th>
+                  </tr>
+                </thead>
+                <tbody id="task-rows"></tbody>
+              </table>
+              <div class="empty-state" id="empty-state">
+                <div class="empty-art" aria-hidden="true"><span class="empty-line line-one"></span><span class="empty-line line-two"></span><span class="empty-node node-one">A</span><span class="empty-node node-two">B</span><span class="empty-node node-three">C</span></div>
+                <h3>Nenhuma atividade neste recorte</h3>
+                <p>Adicione uma atividade ou ajuste os filtros para ver o planejamento do time.</p>
+                <button class="button button-primary button-small" id="empty-add-button">＋ Nova atividade</button>
+              </div>
+            </div>
+            <div class="table-footer"><span id="footer-summary">Mostrando 0 atividades</span><span class="footer-legend"><i class="legend-dot dot-green"></i> No prazo <i class="legend-dot dot-amber"></i> Atenção <i class="legend-dot dot-red"></i> Atrasada</span></div>
+          </section>
+        </section>
+
+        <section class="page-section secondary-view hidden" id="projects-view"></section>
+        <section class="page-section secondary-view hidden" id="people-view"></section>
+        <section class="page-section secondary-view hidden" id="notifications-view"></section>
+        <section class="page-section secondary-view hidden" id="settings-view"></section>
+        <section class="page-section secondary-view hidden" id="changelog-view"></section>
+
+        <footer class="app-footer"><span>C_PLANNER</span><span>Armazenamento local <i></i></span></footer>
+      </main>
+    </div>
+
+    <dialog class="task-dialog" id="task-dialog">
+      <form id="task-form" method="dialog">
+        <div class="dialog-header"><div><div class="eyebrow">PLANEJAMENTO DO TIME</div><h2 id="dialog-title">Nova atividade</h2></div><button class="dialog-close" type="button" id="close-dialog" aria-label="Fechar">×</button></div>
+        <input type="hidden" id="task-id" />
+        <div class="form-grid">
+          <label class="form-field span-two"><span>Nome da atividade <b>*</b></span><input id="task-name" required maxlength="100" placeholder="Ex.: Validar integração do protocolo" /></label>
+          <label class="form-field"><span>Projeto <b>*</b></span><select id="task-project" required></select></label>
+          <label class="form-field"><span>Entregável</span><select id="task-deliverable"></select></label>
+          <label class="form-field"><span>Execução por</span><select id="task-execution-type"><option value="internal">Meu time</option><option value="external">Outro(s) time(s)</option></select></label>
+          <div class="form-field span-two" id="task-people-field"><span>Responsáveis</span><div class="people-picker"><input id="task-people" autocomplete="off" aria-autocomplete="list" aria-controls="people-suggestions" aria-expanded="false" placeholder="Opcional; separe mais de um nome por vírgula" /><div class="people-suggestions" id="people-suggestions" role="listbox" aria-label="Pessoas cadastradas" hidden></div></div><small class="field-note">Opcional. Use pessoas cadastradas e separe mais de um nome por vírgula.</small></div>
+          <div class="form-field span-two hidden" id="task-teams-field"><span>Times externos <b>*</b></span><div class="team-checkbox-list" id="task-team-options"></div><small class="field-note">Selecione todos os times que compartilham a execução. Cadastre nomes em Configurações.</small></div>
+          <label class="form-field"><span>Início previsto</span><input id="task-start" type="date" /></label>
+          <label class="form-field"><span>Fim previsto</span><input id="task-end" type="date" /></label>
+          <label class="form-field"><span>Início real</span><input id="task-actual-start" type="date" /></label>
+          <label class="form-field"><span>Status</span><select id="task-status"><option>Não iniciada</option><option>Em andamento</option><option>Bloqueada</option><option>Concluída</option><option>Cancelada</option></select></label>
+          <label class="form-field"><span>Prioridade</span><select id="task-priority"><option>Crítica</option><option>Alta</option><option selected>Normal</option><option>Baixa</option></select></label>
+          <label class="form-field"><span>Esforço previsto (horas)</span><input id="task-effort" type="number" min="0" step="0.5" placeholder="Opcional" /></label>
+          <label class="form-field"><span>Data real de conclusão</span><input id="task-actual-end" type="date" /></label>
+          <label class="form-field span-two"><span>Descrição / notas</span><textarea id="task-description" rows="3" placeholder="Contexto importante para a atividade"></textarea></label>
+        </div>
+        <div class="dialog-actions"><button class="button button-secondary" type="button" id="cancel-dialog">Cancelar</button><button class="button button-primary" type="submit">Salvar atividade</button></div>
+      </form>
+    </dialog>
+    <dialog class="task-dialog entity-dialog" id="project-dialog">
+      <form id="project-form" method="dialog">
+        <div class="dialog-header"><div><div class="eyebrow">PORTFÓLIO</div><h2 id="project-dialog-title">Novo projeto</h2></div><button class="dialog-close" type="button" data-close-dialog="project-dialog" aria-label="Fechar">×</button></div>
+        <input type="hidden" id="project-id" />
+        <div class="form-grid">
+          <label class="form-field span-two"><span>Nome do projeto <b>*</b></span><input id="project-name" required maxlength="100" placeholder="Nome do projeto" /></label>
+          <label class="form-field"><span>Situação</span><select id="project-status"><option>Ativo</option><option>Encerrado</option></select></label>
+          <label class="form-field"><span>Descrição</span><input id="project-description" maxlength="160" placeholder="Opcional" /></label>
+          <div class="form-field span-two project-planning-editor">
+            <div class="project-planning-heading"><div><strong>Fases do projeto</strong><small>Defina a ordem das fases; Backlog permanece sempre por último.</small></div></div>
+            <div class="phase-add-row"><input id="new-project-phase" maxlength="60" placeholder="Nome da fase" aria-label="Nome da fase do projeto" /><button class="button button-secondary action-button" type="button" id="add-project-phase">＋ Adicionar fase</button></div>
+            <ol class="project-phase-list" id="project-phases-list"></ol>
+            <div class="project-planning-heading deliverables-heading"><div><strong>Entregáveis do projeto</strong><small>Associe cada entregável a uma fase ou mantenha-o no Backlog.</small></div></div>
+            <div class="phase-add-row deliverable-add-row"><input id="new-project-deliverable" maxlength="100" placeholder="Nome do entregável" aria-label="Nome do entregável" /><select id="new-project-deliverable-phase" data-deliverable-phase aria-label="Fase do entregável"></select><button class="button button-secondary action-button" type="button" id="add-project-deliverable">＋ Adicionar entregável</button></div>
+            <div class="deliverable-editor-scroll"><table class="deliverable-editor-table"><thead><tr><th>ENTREGÁVEL</th><th>FASE</th><th></th></tr></thead><tbody id="project-deliverable-rows"></tbody></table><p class="deliverable-editor-empty hidden" id="deliverable-editor-empty">Nenhum entregável cadastrado.</p></div>
+          </div>
+        </div>
+        <div class="dialog-actions"><button class="button button-secondary" type="button" data-cancel-dialog="project-dialog">Cancelar</button><button class="button button-primary" type="submit">Salvar projeto</button></div>
+      </form>
+    </dialog>
+    <dialog class="task-dialog entity-dialog" id="person-dialog">
+      <form id="person-form" method="dialog">
+        <div class="dialog-header"><div><div class="eyebrow">RECURSOS</div><h2 id="person-dialog-title">Nova pessoa</h2></div><button class="dialog-close" type="button" data-close-dialog="person-dialog" aria-label="Fechar">×</button></div>
+        <input type="hidden" id="person-id" />
+        <div class="form-grid">
+          <label class="form-field span-two"><span>Nome <b>*</b></span><input id="person-name" required maxlength="80" placeholder="Nome da pessoa" /></label>
+          <label class="form-field"><span>Capacidade diária (horas)</span><input id="person-capacity" type="number" min="0.5" max="24" step="0.5" value="8" required /></label>
+        </div>
+        <div class="dialog-actions"><button class="button button-secondary" type="button" data-cancel-dialog="person-dialog">Cancelar</button><button class="button button-primary" type="submit">Salvar pessoa</button></div>
+      </form>
+    </dialog>
+    <dialog class="task-dialog entity-dialog add-type-dialog" id="add-type-dialog">
+      <div class="dialog-header"><div><div class="eyebrow">NOVO BLOCO</div><h2>O que vamos adicionar?</h2></div><button class="dialog-close" type="button" id="close-add-type" aria-label="Fechar">×</button></div>
+      <p class="section-description" id="add-type-direction">Escolha o tipo do próximo bloco.</p>
+      <div class="add-type-options"><button class="button button-secondary" id="choose-activity-type"><span class="add-type-icon">▣</span> Atividade</button><button class="button button-secondary" id="choose-deliverable-type"><span class="add-type-icon">◆</span> Entregável</button></div>
+    </dialog>
+    <dialog class="task-dialog entity-dialog" id="share-dialog">
+      <form id="share-form" method="dialog">
+        <div class="dialog-header"><div><div class="eyebrow">ATIVIDADE EXISTENTE</div><h2>Compartilhar bloco</h2></div><button class="dialog-close" type="button" data-close-dialog="share-dialog" aria-label="Fechar">×</button></div>
+        <p class="section-description">O bloco existente será reutilizado no fluxo atual; seus dados permanecem únicos.</p>
+        <label class="form-field"><span>Atividade cadastrada <b>*</b></span><select id="share-task-select" required></select></label>
+        <label class="form-field"><span>Entregável deste projeto <b>*</b></span><select id="share-deliverable-select" required></select></label>
+        <div class="dialog-actions"><button class="button button-secondary" type="button" data-cancel-dialog="share-dialog">Cancelar</button><button class="button button-primary" type="submit">Vincular bloco</button></div>
+      </form>
+    </dialog>
+    <input id="backup-file" type="file" accept="application/json,.json" hidden />
+    <input id="ics-file" type="file" accept=".ics,text/calendar" hidden />
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
