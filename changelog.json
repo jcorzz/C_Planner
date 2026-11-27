@@ -1,5 +1,12 @@
 [
 	{
+		"version": "0.1.5",
+		"date": "2026-11-27",
+		"changes": [
+			"O PDF do projeto agora inclui a tabela de atividades em andamento, com responsável, data real de início e data prevista de término."
+		]
+	},
+	{
 		"version": "0.1.4",
 		"date": "2026-11-27",
 		"changes": [

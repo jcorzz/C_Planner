@@ -229,6 +229,8 @@ function buildProjectReportHtml(project) {
     return `<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.phase)}</td><td>${done ? `Concluído em ${fmtDate(item.completedAt || project.completedPhases?.[item.phase])}` : "Em andamento"}</td></tr>`;
   }).join("") || '<tr><td colspan="3">Nenhum entregável cadastrado.</td></tr>';
   const historyRows = [...(project.history || [])].reverse().map((entry) => `<tr><td>${escapeHtml(new Date(entry.at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }))}</td><td>${escapeHtml(entry.kind)}</td><td>${escapeHtml(entry.name)}</td><td>${escapeHtml(entry.action)}${entry.note ? ` <small>(${escapeHtml(entry.note)})</small>` : ""}</td></tr>`).join("") || '<tr><td colspan="4">Nenhum registro.</td></tr>';
+  const activeTasks = tasks.filter((task) => (task.project === project.name || (task.projectLinks || []).includes(project.id)) && task.status === "Em andamento");
+  const taskRows = activeTasks.map((task) => `<tr><td>${escapeHtml(task.name)}</td><td>${escapeHtml((task.people || []).join(", ") || "—")}</td><td>${fmtDate(task.actualStart)}</td><td>${fmtDate(task.end)}</td></tr>`).join("") || '<tr><td colspan="4">Nenhuma atividade em andamento.</td></tr>';
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(project.name)}</title><style>
     body{font-family:Segoe UI,Arial,sans-serif;color:#23342f;margin:0;font-size:12px}
     h1{font-size:22px;margin:0 0 4px}h2{font-size:14px;margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid #17677a;color:#17677a}
@@ -240,6 +242,7 @@ function buildProjectReportHtml(project) {
     <h2>Informações do projeto</h2><table class="info">${field("Situação", project.status)}${field("Solicitante", project.requester)}${field("Solicitado via", project.requestedVia)}${field("Data da solicitação", project.requestDate ? fmtDate(project.requestDate) : "")}<tr><th>Descrição</th><td class="desc">${escapeHtml(project.description || "—")}</td></tr></table>
     <h2>Fases</h2><table><thead><tr><th>#</th><th>Fase</th><th>Entregáveis</th><th>Situação</th></tr></thead><tbody>${phaseRows}</tbody></table>
     <h2>Entregáveis</h2><table><thead><tr><th>Entregável</th><th>Fase</th><th>Situação</th></tr></thead><tbody>${deliverableRows}</tbody></table>
+    <h2>Atividades em andamento</h2><table><thead><tr><th>Atividade</th><th>Responsável</th><th>Início real</th><th>Término previsto</th></tr></thead><tbody>${taskRows}</tbody></table>
     <h2>Histórico</h2><table><thead><tr><th>Data/hora</th><th>Tipo</th><th>Item</th><th>Ação</th></tr></thead><tbody>${historyRows}</tbody></table>
     </body></html>`;
 }
