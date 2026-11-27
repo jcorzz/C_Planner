@@ -14,6 +14,24 @@ if (testBuild) {
 
 ipcMain.handle("app:get-version", () => app.getVersion());
 
+ipcMain.handle("app:export-pdf", async (_event, { html, defaultName }) => {
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: "Exportar projeto em PDF",
+    defaultPath: path.join(app.getPath("documents"), defaultName),
+    filters: [{ name: "PDF", extensions: ["pdf"] }],
+  });
+  if (canceled || !filePath) return { canceled: true };
+  const printWindow = new BrowserWindow({ show: false });
+  try {
+    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+    const pdf = await printWindow.webContents.printToPDF({ pageSize: "A4", printBackground: true });
+    await fs.writeFile(filePath, pdf);
+    return { canceled: false, filePath };
+  } finally {
+    printWindow.destroy();
+  }
+});
+
 function sendUpdateStatus(message) {
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading()) {
     pendingUpdateStatus = message;

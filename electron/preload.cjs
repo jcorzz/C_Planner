@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("cPlanner", {
   getInstalledVersion: () => ipcRenderer.invoke("app:get-version"),
+  exportPdf: (payload) => ipcRenderer.invoke("app:export-pdf", payload),
   getStorageSnapshot: () => {
     const snapshot = {};
     for (let index = 0; index < window.localStorage.length; index += 1) {

@@ -213,6 +213,8 @@ export function createFlowchart(container, callbacks) {
 
   function addGraphNode(node, position) {
     if (node.type === "phase") {
+      const phaseDone = Boolean(node.record.completedAt);
+      const phaseLabel = node.record.name.toLocaleUpperCase("pt-BR") + (phaseDone ? ` · ✓ CONCLUÍDA EM ${node.record.completedAt.split("-").reverse().join("/")}` : "");
       graph.addNode({
         id: node.id,
         shape: "rect",
@@ -222,17 +224,19 @@ export function createFlowchart(container, callbacks) {
         height: node.record.bandHeight,
         zIndex: 0,
         attrs: {
-          body: { fill: "#f5f8f5", stroke: "#d8e2dc", strokeWidth: 1, rx: 6, ry: 6, pointerEvents: "none" },
-          label: { text: node.record.name.toLocaleUpperCase("pt-BR"), refX: 14, refY: 10, textAnchor: "start", textVerticalAnchor: "top", fontSize: 10, fontWeight: 700, fill: "#6e8175", pointerEvents: "none" },
+          body: { fill: phaseDone ? "#e6f2e8" : "#f5f8f5", stroke: phaseDone ? "#7fb48a" : "#d8e2dc", strokeWidth: 1, rx: 6, ry: 6, pointerEvents: "none" },
+          label: { text: phaseLabel, refX: 14, refY: 10, textAnchor: "start", textVerticalAnchor: "top", fontSize: 10, fontWeight: 700, fill: phaseDone ? "#3d7a4a" : "#6e8175", pointerEvents: "none" },
+          action: { text: phaseDone ? "↺ Reabrir fase" : "✓ Concluir fase", refX: node.record.bandWidth - 14, refY: 10, textAnchor: "end", textVerticalAnchor: "top", fontSize: 10, fontWeight: 700, fill: "#2784f5", cursor: "pointer", event: "node:phasecomplete" },
         },
-        markup: [{ tagName: "rect", selector: "body" }, { tagName: "text", selector: "label" }],
-        data: { type: "phase", recordId: node.record.id },
+        markup: [{ tagName: "rect", selector: "body" }, { tagName: "text", selector: "label" }, { tagName: "text", selector: "action" }],
+        data: { type: "phase", recordId: node.record.id, projectId: node.record.projectId, phaseName: node.record.name },
       });
       return;
     }
     const isProject = node.type === "project";
     const isDeliverable = node.type === "deliverable";
-    const fill = isProject ? "#cfe4e8" : isDeliverable ? "#d9e8e9" : taskFill(node.record, currentEdges, new Map(currentNodes.filter((item) => item.type === "task").map((item) => [item.id, item.record])));
+    const isCompleted = isDeliverable && Boolean(node.record.completed);
+    const fill = isProject ? "#cfe4e8" : isDeliverable ? (isCompleted ? "#cfe9d4" : "#d9e8e9") : taskFill(node.record, currentEdges, new Map(currentNodes.filter((item) => item.type === "task").map((item) => [item.id, item.record])));
     const priority = node.record.priority || "Normal";
     const assignee = initials(node.record.people || []);
     const externalTeams = (node.record.teamNames || []).map((name) => name.length > 12 ? `${name.slice(0, 11)}…` : name);
@@ -240,7 +244,7 @@ export function createFlowchart(container, callbacks) {
     const teamLabel = externalTeams.length > 1 ? `${externalTeams[0]} +${externalTeams.length - 1}` : externalTeams[0];
     const sharedEdgeCount = currentEdges.filter((edge) => edge.source === node.id && edge.target.startsWith("deliverable:")).length;
     const isShared = !isDeliverable && ((node.record.projectLinks || []).length > 0 || sharedEdgeCount > 1 || (node.record.sharedDeliverableIds || []).length > 0);
-    const due = isProject ? "INÍCIO DO PLANO" : isDeliverable ? "ENTREGÁVEL" : (node.record.end ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(`${node.record.end}T12:00:00`)).replace(" de ", "/").replace(".", "") : "Sem data");
+    const due = isProject ? "INÍCIO DO PLANO" : isDeliverable ? (isCompleted ? `✓ CONCLUÍDO ${(node.record.completedAt || "").split("-").reverse().join("/")}` : "ENTREGÁVEL") : (node.record.end ? new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(`${node.record.end}T12:00:00`)).replace(" de ", "/").replace(".", "") : "Sem data");
     const title = wrapNodeTitle(node.record.name);
     const meta = isProject ? "PROJETO" : isDeliverable ? "ALVO DE ENTREGA" : isExternal ? `TIME · ${teamLabel || "Sem atribuição"}   ◆ ${priority}` : `${assignee ? `♙ ${assignee}` : "♙ Sem responsável"}   ◆ ${priority}${isShared ? " · COMPARTILHADO" : ""}`;
     graph.addNode({
@@ -303,6 +307,21 @@ export function createFlowchart(container, callbacks) {
           onClick: ({ cell }) => node.type === "task"
             ? callbacks.onTaskDelete(cell.getData().recordId)
             : callbacks.onDeliverableDelete(cell.getData().recordId),
+        },
+      });
+    }
+    if (node.type === "deliverable") {
+      nodeTools.push({
+        name: "button",
+        args: {
+          x: NODE_WIDTH,
+          y: BLOCK_HEIGHT,
+          offset: { x: 13, y: 7 },
+          markup: [
+            { tagName: "circle", selector: "button", attrs: { r: 8, fill: "#fff", stroke: "#3d7a4a", strokeWidth: 1.4, cursor: "pointer" } },
+            { tagName: "path", selector: "icon", attrs: { d: isCompleted ? "M -3 1 A 3.5 3.5 0 1 0 -2 -2 M -4 -3 V -1 H -2" : "M -4 0 L -1 3 L 4 -3", fill: "none", stroke: "#3d7a4a", strokeWidth: 1.4, strokeLinecap: "round", strokeLinejoin: "round", pointerEvents: "none" } },
+          ],
+          onClick: ({ cell }) => callbacks.onDeliverableComplete(cell.getData().recordId),
         },
       });
     }
@@ -445,6 +464,10 @@ export function createFlowchart(container, callbacks) {
     if (view.isNodeView()) view.hideTools();
   });
   graph.on("node:contextmenu", ({ e, node }) => openStatusMenu(node, e));
+  graph.on("node:phasecomplete", ({ node }) => {
+    const data = node.getData();
+    callbacks.onPhaseComplete(data.projectId, data.phaseName);
+  });
   graph.on("node:click", ({ node }) => {
     closeStatusMenu();
     if (node.getData()?.type === "phase") return;

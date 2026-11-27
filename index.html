@@ -177,20 +177,35 @@
       <form id="project-form" method="dialog">
         <div class="dialog-header"><div><div class="eyebrow">PORTFÓLIO</div><h2 id="project-dialog-title">Novo projeto</h2></div><button class="dialog-close" type="button" data-close-dialog="project-dialog" aria-label="Fechar">×</button></div>
         <input type="hidden" id="project-id" />
-        <div class="form-grid">
+        <div class="project-tabs" role="tablist" aria-label="Seções do projeto">
+          <button class="project-tab active" type="button" role="tab" id="project-tab-info" data-project-tab="info" aria-selected="true" aria-controls="project-panel-info">Informações</button>
+          <button class="project-tab" type="button" role="tab" id="project-tab-phases" data-project-tab="phases" aria-selected="false" aria-controls="project-panel-phases" tabindex="-1">Fases</button>
+          <button class="project-tab" type="button" role="tab" id="project-tab-deliverables" data-project-tab="deliverables" aria-selected="false" aria-controls="project-panel-deliverables" tabindex="-1">Entregáveis</button>
+                    <button class="project-tab" type="button" role="tab" id="project-tab-history" data-project-tab="history" aria-selected="false" aria-controls="project-panel-history" tabindex="-1">Histórico</button>        </div>
+        <div class="form-grid project-tab-panel" role="tabpanel" id="project-panel-info" aria-labelledby="project-tab-info">
           <label class="form-field span-two"><span>Nome do projeto <b>*</b></span><input id="project-name" required maxlength="100" placeholder="Nome do projeto" /></label>
           <label class="form-field"><span>Situação</span><select id="project-status"><option>Ativo</option><option>Encerrado</option></select></label>
-          <label class="form-field"><span>Descrição</span><input id="project-description" maxlength="160" placeholder="Opcional" /></label>
-          <div class="form-field span-two project-planning-editor">
-            <div class="project-planning-heading"><div><strong>Fases do projeto</strong><small>Defina a ordem das fases; Backlog permanece sempre por último.</small></div></div>
-            <div class="phase-add-row"><input id="new-project-phase" maxlength="60" placeholder="Nome da fase" aria-label="Nome da fase do projeto" /><button class="button button-secondary action-button" type="button" id="add-project-phase">＋ Adicionar fase</button></div>
-            <ol class="project-phase-list" id="project-phases-list"></ol>
-            <div class="project-planning-heading deliverables-heading"><div><strong>Entregáveis do projeto</strong><small>Associe cada entregável a uma fase ou mantenha-o no Backlog.</small></div></div>
+          <label class="form-field"><span>Solicitante</span><input id="project-requester" maxlength="100" placeholder="Opcional" /></label>
+          <label class="form-field"><span>Solicitado via</span><select id="project-requested-via"><option value="">Não informado</option><option>E-mail</option><option>WhatsApp</option><option>Chamado</option></select></label>
+          <label class="form-field"><span>Data da solicitação</span><input id="project-request-date" type="date" /></label>
+          <label class="form-field span-two"><span>Descrição</span><textarea id="project-description" rows="6" maxlength="2000" placeholder="Descreva o projeto (opcional)"></textarea></label>
+        </div>
+        <div class="project-tab-panel project-planning-editor hidden" role="tabpanel" id="project-panel-phases" aria-labelledby="project-tab-phases">
+          <div class="project-planning-heading"><div><strong>Fases do projeto</strong><small>Defina a ordem das fases; Backlog permanece sempre por último.</small></div></div>
+          <div class="phase-add-row"><input id="new-project-phase" maxlength="60" placeholder="Nome da fase" aria-label="Nome da fase do projeto" /><button class="button button-secondary action-button" type="button" id="add-project-phase">＋ Adicionar fase</button></div>
+          <ol class="project-phase-list" id="project-phases-list"></ol>
+        </div>
+        <div class="project-tab-panel project-planning-editor hidden" role="tabpanel" id="project-panel-deliverables" aria-labelledby="project-tab-deliverables">
+          <div class="project-planning-heading deliverables-heading"><div><strong>Entregáveis do projeto</strong><small>Associe cada entregável a uma fase ou mantenha-o no Backlog.</small></div></div>
             <div class="phase-add-row deliverable-add-row"><input id="new-project-deliverable" maxlength="100" placeholder="Nome do entregável" aria-label="Nome do entregável" /><select id="new-project-deliverable-phase" data-deliverable-phase aria-label="Fase do entregável"></select><button class="button button-secondary action-button" type="button" id="add-project-deliverable">＋ Adicionar entregável</button></div>
             <div class="deliverable-editor-scroll"><table class="deliverable-editor-table"><thead><tr><th>ENTREGÁVEL</th><th>FASE</th><th></th></tr></thead><tbody id="project-deliverable-rows"></tbody></table><p class="deliverable-editor-empty hidden" id="deliverable-editor-empty">Nenhum entregável cadastrado.</p></div>
-          </div>
         </div>
-        <div class="dialog-actions"><button class="button button-secondary" type="button" data-cancel-dialog="project-dialog">Cancelar</button><button class="button button-primary" type="submit">Salvar projeto</button></div>
+        <div class="project-tab-panel project-planning-editor hidden" role="tabpanel" id="project-panel-history" aria-labelledby="project-tab-history">
+          <div class="project-planning-heading"><div><strong>Histórico do projeto</strong><small>Conclusões e reaberturas de fases e entregáveis, da mais recente para a mais antiga.</small></div></div>
+          <ul class="history-list" id="project-history-list"></ul>
+          <p class="deliverable-editor-empty hidden" id="project-history-empty">Nenhum registro ainda.</p>
+        </div>
+        <div class="dialog-actions"><button class="button button-secondary hidden" type="button" id="export-project-pdf">Exportar PDF</button><button class="button button-secondary" type="button" data-cancel-dialog="project-dialog">Cancelar</button><button class="button button-primary" type="submit">Salvar projeto</button></div>
       </form>
     </dialog>
     <dialog class="task-dialog entity-dialog" id="person-dialog">

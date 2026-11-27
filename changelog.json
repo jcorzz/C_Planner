@@ -1,5 +1,17 @@
 [
 	{
+		"version": "0.1.4",
+		"date": "2026-11-27",
+		"changes": [
+			"O cadastro de projetos passou a ser dividido em abas: Informações, Fases, Entregáveis e Histórico.",
+			"Novos campos no projeto: Solicitante, Solicitado via (e-mail, WhatsApp ou chamado) e Data da solicitação, além de uma descrição maior.",
+			"Fases e entregáveis podem ser concluídos e reabertos; itens concluídos não aceitam novas atividades e a conclusão é bloqueada enquanto houver atividades em aberto.",
+			"Histórico do projeto registra quando fases e entregáveis foram concluídos ou reabertos.",
+			"Projetos podem ser exportados em PDF com informações, fases, entregáveis e histórico.",
+			"O menu lateral mantém altura fixa enquanto o conteúdo da página rola."
+		]
+	},
+	{
 		"version": "0.1.3",
 		"date": "2026-11-27",
 		"changes": [
